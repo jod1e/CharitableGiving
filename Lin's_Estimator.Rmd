@@ -1,0 +1,374 @@
+---
+title: Lin's Estimator
+output: pdf_document
+---
+```{r}
+library(haven)
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+
+#Load dataset
+AER <- read_dta("AER merged.dta")
+```
+
+Centering covariates and cleaning NAs:
+```{r}
+#Creating de-meaning function
+demean <- function(x) {
+  return(x-mean(x, na.rm=T))
+}
+
+#Covariates to demean
+covs <- c("hpa", "freq", "years", "mrm2", "dormant",
+          "female", "couple", "nonlit", "cases", "red0",
+          "redcty", "pwhite", "pblack", "page18_39", "ave_hh_sz",
+          "median_hhincome", "powner", "psch_atlstba", "pop_propurban")
+
+#Apply de-meaning function
+AER[covs] <- sapply(AER[covs], demean) 
+AER_centered <- AER
+
+#Remove NA values
+AER_centered <- na.omit(AER_centered)
+```
+
+Calculating the effect of matching using `gave` as our outcome variable:
+```{r}
+fit1 <- lm(gave ~ treatment + hpa*treatment + freq*treatment +
+            years*treatment + mrm2*treatment + dormant*treatment +
+            female*treatment+couple*treatment + nonlit*treatment +
+            cases*treatment + red0*treatment + redcty*treatment +
+            pwhite*treatment + pblack*treatment + page18_39*treatment +
+            ave_hh_sz*treatment + median_hhincome*treatment +
+            powner*treatment + psch_atlstba*treatment +
+            pop_propurban*treatment, data=AER_centered)
+fit1$coefficients[2]
+
+fit1_SE <- sqrt(vcovHC(fit1,type="HC1")[2,2])
+```
+
+Effect of 1:1 ratio using `gave` as our outcome variable:
+```{r}
+fit2 <- lm(gave ~ ratio + hpa*ratio + freq*ratio +
+            years*ratio + mrm2*ratio + dormant*ratio +
+            female*ratio+couple*ratio + nonlit*ratio +
+            cases*ratio + red0*ratio + redcty*ratio +
+            pwhite*ratio + pblack*ratio + page18_39*ratio +
+            ave_hh_sz*ratio + median_hhincome*ratio +
+            powner*ratio + psch_atlstba*ratio +
+            pop_propurban*ratio,
+           # Need to filter data so units with other treatments aren't included 
+           data=filter(AER_centered, ratio!=2, ratio!=3))
+fit2$coefficients[2]
+fit2_SE <- sqrt(vcovHC(fit2,type="HC1")[2,2])
+```
+
+Effect of 2:1 ratio using `gave` as our outcome variable:
+```{r}
+fit3 <- lm(gave ~ ratio2 + hpa*ratio2 + freq*ratio2 +
+            years*ratio2 + mrm2*ratio2 + dormant*ratio2 +
+            female*ratio2+couple*ratio2 + nonlit*ratio2 +
+            cases*ratio2 + red0*ratio2 + redcty*ratio2 +
+            pwhite*ratio2 + pblack*ratio2 + page18_39*ratio2 +
+            ave_hh_sz*ratio2 + median_hhincome*ratio2 +
+            powner*ratio2 + psch_atlstba*ratio2 +
+            pop_propurban*ratio2,
+           # Need to filter data so units with other treatments aren't included
+           data=filter(AER_centered, ratio!=1, ratio!=3))
+fit3$coefficients[2]
+fit3_SE <- sqrt(vcovHC(fit3,type="HC1")[2,2])
+```
+
+Effect of 3:1 ratio using `gave` as our outcome variable:
+```{r}
+fit4 <- lm(gave ~ ratio3 + hpa*ratio3 + freq*ratio3 +
+            years*ratio3 + mrm2*ratio3 + dormant*ratio3 +
+            female*ratio3+couple*ratio3 + nonlit*ratio3 +
+            cases*ratio3 + red0*ratio3 + redcty*ratio3 +
+            pwhite*ratio3 + pblack*ratio3 + page18_39*ratio3 +
+            ave_hh_sz*ratio3 + median_hhincome*ratio3 +
+            powner*ratio3 + psch_atlstba*ratio3 +
+            pop_propurban*ratio3,
+           # Need to filter data so units with other treatments aren't included
+           data=filter(AER_centered, ratio!=1, ratio!=2))
+fit4$coefficients[2]
+fit4_SE <- sqrt(vcovHC(fit4,type="HC1")[2,2])
+```
+
+Effect of matching using `amount` as our outcome variable:
+```{r}
+fit5 <- lm(amount ~ treatment + hpa*treatment + freq*treatment +
+            years*treatment + mrm2*treatment + dormant*treatment +
+            female*treatment+couple*treatment + nonlit*treatment +
+            cases*treatment + red0*treatment + redcty*treatment +
+            pwhite*treatment + pblack*treatment + page18_39*treatment +
+            ave_hh_sz*treatment + median_hhincome*treatment +
+            powner*treatment + psch_atlstba*treatment +
+            pop_propurban*treatment, data=AER_centered)
+fit5$coefficients[2]
+fit5_SE <- sqrt(vcovHC(fit5,type="HC1")[2,2])
+```
+
+Effect of 1:1 ratio using `amount` as our outcome variable:
+```{r}
+fit6 <- lm(amount ~ ratio + hpa*ratio + freq*ratio +
+            years*ratio + mrm2*ratio + dormant*ratio +
+            female*ratio+couple*ratio + nonlit*ratio +
+            cases*ratio + red0*ratio + redcty*ratio +
+            pwhite*ratio + pblack*ratio + page18_39*ratio +
+            ave_hh_sz*ratio + median_hhincome*ratio +
+            powner*ratio + psch_atlstba*ratio +
+            pop_propurban*ratio,
+           # Need to filter data so units with other treatments aren't included 
+           data=filter(AER_centered, ratio!=2, ratio!=3))
+fit6$coefficients[2]
+fit6_SE <- sqrt(vcovHC(fit6,type="HC1")[2,2])
+```
+
+Effect of 2:1 ratio using `amount` as our outcome variable:
+```{r}
+fit7 <- lm(amount ~ ratio2 + hpa*ratio2 + freq*ratio2 +
+            years*ratio2 + mrm2*ratio2 + dormant*ratio2 +
+            female*ratio2+couple*ratio2 + nonlit*ratio2 +
+            cases*ratio2 + red0*ratio2 + redcty*ratio2 +
+            pwhite*ratio2 + pblack*ratio2 + page18_39*ratio2 +
+            ave_hh_sz*ratio2 + median_hhincome*ratio2 +
+            powner*ratio2 + psch_atlstba*ratio2 +
+            pop_propurban*ratio2,
+           # Need to filter data so units with other treatments aren't included
+           data=filter(AER_centered, ratio!=1, ratio!=3))
+fit7$coefficients[2]
+fit7_SE <- sqrt(vcovHC(fit7,type="HC1")[2,2])
+```
+
+Effect of 3:1 ratio using `amount` as our outcome variable:
+```{r}
+fit8 <- lm(amount ~ ratio3 + hpa*ratio3 + freq*ratio3 +
+            years*ratio3 + mrm2*ratio3 + dormant*ratio3 +
+            female*ratio3+couple*ratio3 + nonlit*ratio3 +
+            cases*ratio3 + red0*ratio3 + redcty*ratio3 +
+            pwhite*ratio3 + pblack*ratio3 + page18_39*ratio3 +
+            ave_hh_sz*ratio3 + median_hhincome*ratio3 +
+            powner*ratio3 + psch_atlstba*ratio3 +
+            pop_propurban*ratio3,
+           # Need to filter data so units with other treatments aren't included
+           data=filter(AER_centered, ratio!=1, ratio!=2))
+fit8$coefficients[2]
+fit8_SE <- sqrt(vcovHC(fit8,type="HC1")[2,2])
+```
+
+Effect of matching in blue states using `amount` as our outcome variable:
+```{r}
+fit9 <- lm(amount ~ treatment + hpa*treatment + freq*treatment +
+            years*treatment + mrm2*treatment + dormant*treatment +
+            female*treatment+couple*treatment + nonlit*treatment +
+            cases*treatment + redcty*treatment +
+            pwhite*treatment + pblack*treatment + page18_39*treatment +
+            ave_hh_sz*treatment + median_hhincome*treatment +
+            powner*treatment + psch_atlstba*treatment +
+            pop_propurban*treatment, data=filter(AER_centered, red0<0))
+fit9$coefficients[2]
+fit9_SE <- sqrt(vcovHC(fit9,type="HC1")[2,2])
+```
+
+Effect of matching in red states using `amount` as our outcome variable:
+```{r}
+fit10 <- lm(amount ~ treatment + hpa*treatment + freq*treatment +
+            years*treatment + mrm2*treatment + dormant*treatment +
+            female*treatment+couple*treatment + nonlit*treatment +
+            cases*treatment + redcty*treatment +
+            pwhite*treatment + pblack*treatment + page18_39*treatment +
+            ave_hh_sz*treatment + median_hhincome*treatment +
+            powner*treatment + psch_atlstba*treatment +
+            pop_propurban*treatment, data=filter(AER_centered, red0>0))
+fit10$coefficients[2]
+fit10_SE <- sqrt(vcovHC(fit10,type="HC1")[2,2])
+```
+
+
+Effect of matching in blue states using `gave` as our outcome variable:
+```{r}
+fit11 <- lm(gave ~ treatment + hpa*treatment + freq*treatment +
+            years*treatment + mrm2*treatment + dormant*treatment +
+            female*treatment+couple*treatment + nonlit*treatment +
+            cases*treatment + redcty*treatment +
+            pwhite*treatment + pblack*treatment + page18_39*treatment +
+            ave_hh_sz*treatment + median_hhincome*treatment +
+            powner*treatment + psch_atlstba*treatment +
+            pop_propurban*treatment, data=filter(AER_centered, red0<0))
+fit11$coefficients[2]
+fit11_SE <- sqrt(vcovHC(fit11,type="HC1")[2,2])
+```
+SE: 0.194
+
+Effect of matching in red states using `gave` as our outcome variable:
+```{r}
+fit12 <- lm(gave ~ treatment + hpa*treatment + freq*treatment +
+            years*treatment + mrm2*treatment + dormant*treatment +
+            female*treatment+couple*treatment + nonlit*treatment +
+            cases*treatment + redcty*treatment +
+            pwhite*treatment + pblack*treatment + page18_39*treatment +
+            ave_hh_sz*treatment + median_hhincome*treatment +
+            powner*treatment + psch_atlstba*treatment +
+            pop_propurban*treatment, data=filter(AER_centered, red0>0))
+fit12$coefficients[2]
+fit12_SE <- sqrt(vcovHC(fit12,type="HC1")[2,2])
+```
+
+
+Lin's estimator as a predictive estimator (work in progress)
+```{r}
+AER_centered_t <- filter(AER_centered, treatment==1)
+AER_centered_c <- filter(AER_centered, treatment==0)
+
+fit13 <- lm(amount ~ hpa + freq + years + mrm2 + dormant +
+            female+couple + nonlit + cases + redcty +
+            pwhite + pblack + page18_39 +ave_hh_sz + median_hhincome +
+            powner + psch_atlstba + pop_propurban, data=AER_centered_t)
+fit14 <- lm(amount ~ hpa + freq + years + mrm2 + dormant +
+            female+couple + nonlit + cases + redcty +
+            pwhite + pblack + page18_39 +ave_hh_sz + median_hhincome +
+            powner + psch_atlstba + pop_propurban, data=AER_centered_c)
+
+fit13preds <- predict(fit13, AER_centered_t)
+mean((fit13preds-AER_centered_t$amount)^2)
+```
+
+Tabulating results
+```{r}
+results <- tibble(name=c("Treatment", "1:1", "2:1", "3:1"),
+                  donated=c(fit1$coefficients[2], fit2$coefficients[2],
+                            fit3$coefficients[2], fit4$coefficients[2]),
+                  donate_SE=c(fit1_SE, fit2_SE, fit3_SE, fit4_SE),
+                  amount=c(fit5$coefficients[2], fit6$coefficients[2],
+                           fit7$coefficients[2], fit8$coefficients[2]),
+                  amount_SE=c(fit5_SE, fit6_SE, fit7_SE, fit8_SE), .rows=4)
+View(results)
+```
+
+
+Below: attempts to use a generalized Lin's estimator employing various ML tools
+
+
+```{r}
+set.seed(2)
+t_train <- sample(1:nrow(AER_centered_t), 0.8*nrow(AER_centered_t))
+c_train <- sample(1:nrow(AER_centered_c), 0.8*nrow(AER_centered_c))
+```
+
+Using kNN
+```{r}
+library(FNN)
+divide_by_sd <- function(x) {
+  return(x/sd(x))
+}
+AER_centered[covs] <- sapply(AER_centered[covs], divide_by_sd) 
+AER_centered_t <- filter(AER_centered, treatment==1)
+AER_centered_c <- filter(AER_centered, treatment==0)
+
+k1=5
+k0=5
+```
+```{r}
+knn_fit_1 <- knn.reg(train=AER_centered_t,
+        y=AER_centered_t$amount, k=k1)
+
+knn_fit_0 <- knn.reg(train=AER_centered_c,
+        y=AER_centered_c$amount, k=k0)
+
+#Calibrated predictions
+knn_1_preds_cal <- knn_fit_1$pred+(1/nrow(AER_centered_t))*
+                    sum(AER_centered_t$amount-knn_fit_1$pred)
+knn_0_preds_cal <- knn_fit_0$pred+(1/nrow(AER_centered_c))*
+                    sum(AER_centered_c$amount-knn_fit_0$pred)
+
+#Predictions on whole sample
+knn_1_wholepreds <- knn.reg(train=AER_centered,
+        y=AER_centered$amount, k=k1)
+knn_0_wholepreds <- knn.reg(train=AER_centered,
+        y=AER_centered$amount, k=k0)
+
+#Out-of-sample calibrated predictions
+knn_0_oos_preds <- knn.reg(train=AER_centered_t,
+        y=AER_centered_t$amount, k=k0)$pred+(1/nrow(AER_centered_c))*
+                    sum(AER_centered_c$amount-knn_fit_0$pred)
+knn_1_oos_preds <- knn.reg(train=AER_centered_c,
+        y=AER_centered_c$amount, k=k1)$pred+(1/nrow(AER_centered_t))*
+                    sum(AER_centered_t$amount-knn_fit_1$pred)
+  
+
+#Estimator:
+(1/nrow(AER_centered))*(sum(AER_centered_t$amount-knn_0_oos_preds)-sum(AER_centered_c$amount-knn_1_oos_preds))
+
+mean((knn_fit_1$pred-AER_centered_t$amount)^2)
+mean((knn_fit_0$pred-AER_centered_c$amount)^2)
+
+var_tpred <- ((sum(AER_centered_t$amount-knn_1_preds_cal)^2)/
+                (nrow(AER_centered_t)-1))/nrow(AER_centered_t)+
+            ((sum(AER_centered_c$amount-knn_0_preds_cal)^2)/
+                (nrow(AER_centered_c)-1))/nrow(AER_centered_c)+
+            ((sum((knn_1_wholepreds$pred-knn_0_wholepreds$pred-
+                    mean(knn_1_wholepreds$pred)-
+                    mean(knn_0_wholepreds$pred))^2))/(nrow(AER_centered)-1))/
+                    (nrow(AER_centered))
+var_tpred
+```
+
+Building prediction model $\hat{\mu}_1(x)$ using a random forest model:
+```{r}
+set.seed(1)
+library(randomForest)
+AER_centered_t <- filter(AER_centered, treatment==1)
+
+rf <- randomForest(
+             x=AER_centered_t[x_train,][covs],
+             y=AER_centered_t[x_train,]$amount,
+             xtest=AER_centered_t[-x_train,][covs],
+             ytest=AER_centered_t[-x_train,]$amount)
+plot(rf$test$predicted, AER_centered_t[-x_train,]$amount)
+```
+
+Building prediction model $\hat{\mu}_1{x}$ using lasso:
+```{r}
+library(glmnet)
+
+#Mu_1
+lasso_cv_1 <- cv.glmnet(model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_t[x_train,]),
+                      AER_centered_t[x_train,]$amount, alpha=1)
+
+lasso_preds_1 <- predict(lasso_cv, newx=model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_t[-x_train,]), s="lambda.min")
+
+mean((lasso_preds_1-AER_centered_t[-x_train,]$amount)^2)
+
+#Mu_0
+AER_centered_c <- filter(AER_centered, treatment==0)
+x_train_0 <- sample(1:nrow(AER_centered_c), 0.8*nrow(AER_centered_c))
+
+lasso_cv_0 <- cv.glmnet(model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_c[x_train_0,]),
+                      AER_centered_c[x_train_0,]$amount, alpha=0.5)
+
+lasso_preds_0 <- predict(lasso_cv, newx=model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_c[-x_train_0,]), s="lambda.min")
+
+mean((lasso_preds_0-AER_centered_c[-x_train_0,]$amount)^2)
+
+mean_error_0 <-  mean(AER_centered_c[-x_train_0,]$amount-lasso_preds_0)
+mean_error_1 <-  mean(AER_centered_t[-x_train,]$amount-lasso_preds_1)
+```
+
