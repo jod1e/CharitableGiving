@@ -104,10 +104,10 @@ neyman(treated$amount[treated$red0==1], control$amount[control$red0==1])
 # Donated in 2005 --------------------------------------------------------------
 
 # Donated 
-neyman(treated$amount[treated$dormant==0], control$amount[control$dormant==0])
+neyman(treated$amount[treated$dormant==1], control$amount[control$dormant==1])
 
 # Did not donate 
-neyman(treated$amount[treated$dormant==1], control$amount[control$dormant==1])
+neyman(treated$amount[treated$dormant==0], control$amount[control$dormant==0])
 
 ```
 
@@ -170,10 +170,10 @@ neyman(treated$gave[treated$red0==1], control$gave[control$red0==1])
 # Donated in 2005 --------------------------------------------------------------
 
 # Donated 
-neyman(treated$gave[treated$dormant==0], control$gave[control$dormant==0])
+neyman(treated$gave[treated$dormant==1], control$gave[control$dormant==1])
 
 # Did not donate 
-neyman(treated$gave[treated$dormant==1], control$gave[control$dormant==1])
+neyman(treated$gave[treated$dormant==0], control$gave[control$dormant==0])
 
 ```
 
