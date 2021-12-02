@@ -1,0 +1,309 @@
+---
+title: Lin's Estimator
+output: pdf_document
+---
+```{r}
+library(haven)
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+
+#Load dataset
+AER <- read_dta("AER merged.dta")
+```
+
+Centering covariates and cleaning NAs:
+```{r}
+#Creating de-meaning function
+demean <- function(x) {
+  return(x-mean(x, na.rm=T))
+}
+
+#Covariates to demean
+covs <- c("hpa", "freq", "years", "mrm2", "dormant",
+          "female", "couple", "nonlit", "cases", "red0",
+          "redcty", "pwhite", "pblack", "page18_39", "ave_hh_sz",
+          "median_hhincome", "powner", "psch_atlstba", "pop_propurban")
+
+#Apply de-meaning function
+AER[covs] <- sapply(AER[covs], demean) 
+AER_centered <- AER
+
+#Remove NA values
+AER_centered <- na.omit(AER_centered)
+```
+
+Function to calculate basic lin's estimator result
+```{r}
+#Input: data frame, treatment variable, outcome variable
+#Output: estimator value, SE, p-value, R-squared
+lin <- function(dat, treatment, outcome) {
+  fit <- lm(paste(outcome, "~", treatment, "+hpa*", treatment, "+freq*", treatment,
+                  "+years*", treatment, "+mrm2*", treatment, "+dormant*", treatment,
+            "+female*", treatment, "+couple*", treatment, "+nonlit*", treatment,
+            "+cases*", treatment, "+red0*", treatment, "+redcty*", treatment,
+           "+pwhite*", treatment, "+pblack*", treatment, "+page18_39*", treatment,
+            "+ave_hh_sz*", treatment, "+median_hhincome*", treatment,
+            "+powner*", treatment, "+psch_atlstba*", treatment,
+            "+pop_propurban*", treatment), data=dat)
+return(c(fit$coefficients[2], sqrt(vcovHC(fit, type="HC1")[2,2]), coeftest(fit, vcovHC(fit, type="HC1"))[122], summary(fit)$r.squared))
+}
+```
+
+```{r}
+lin(AER_centered, "treatment", "gave")
+lin(AER_centered, "treatment", "amount")
+lin(filter(AER_centered, ratio!=2, ratio!=3), "ratio", "gave")
+lin(filter(AER_centered, ratio!=2, ratio!=3), "ratio", "amount")
+lin(filter(AER_centered, ratio!=1, ratio!=3), "ratio2", "gave")
+lin(filter(AER_centered, ratio!=1, ratio!=3), "ratio2", "amount")
+lin(filter(AER_centered, ratio!=1, ratio!=2), "ratio3", "gave")
+lin(filter(AER_centered, ratio!=1, ratio!=2), "ratio3", "amount")
+```
+
+Blue or red state:
+```{r}
+lin(filter(AER_centered, red0<0), "treatment", "amount")
+lin(filter(AER_centered, red0>0), "treatment", "amount")
+lin(filter(AER_centered, red0<0), "treatment", "gave")
+lin(filter(AER_centered, red0>0), "treatment", "gave")
+```
+
+Donated in 2005?
+```{r}
+lin(filter(AER_centered, dormant>0), "treatment", "gave")
+lin(filter(AER_centered, dormant<0), "treatment", "gave")
+lin(filter(AER_centered, dormant>0), "treatment", "amount")
+lin(filter(AER_centered, dormant<0), "treatment", "amount")
+```
+
+Threshold
+```{r}
+lin(filter(AER_centered, size !=2, size !=3), "size25", "gave")
+lin(filter(AER_centered, size !=2, size !=3), "size25", "amount")
+lin(filter(AER_centered, size !=1, size !=3), "size50", "gave")
+lin(filter(AER_centered, size !=1, size !=3), "size50", "amount")
+lin(filter(AER_centered, size !=1, size !=2), "size100", "gave")
+lin(filter(AER_centered, size !=1, size !=2), "size100", "amount")
+```
+
+Example amount
+```{r}
+lin(filter(AER_centered, ask !=2, ask !=3), "askd1", "gave")
+lin(filter(AER_centered, ask !=2, ask !=3), "askd1", "amount")
+lin(filter(AER_centered, ask !=1, ask !=3), "askd2", "gave")
+lin(filter(AER_centered, ask !=1, ask !=3), "askd2", "amount")
+lin(filter(AER_centered, ask !=1, ask !=2), "askd3", "gave")
+lin(filter(AER_centered, ask !=1, ask !=2), "askd3", "amount")
+```
+
+Calculating treatment vs treatment results
+```{r}
+#3:1 vs 1:1
+lin(filter(AER_centered, ratio!=2, ratio!=0), "ratio3", "gave")
+lin(filter(AER_centered, ratio!=2, ratio!=0), "ratio3", "amount")
+
+#2:1 vs 1:1
+lin(filter(AER_centered, ratio!=0, ratio!=3), "ratio2", "gave")
+lin(filter(AER_centered, ratio!=0, ratio!=3), "ratio2", "amount")
+
+#3:1 vs 2:1
+lin(filter(AER_centered, ratio!=1, ratio!=0), "ratio3", "gave")
+lin(filter(AER_centered, ratio!=1, ratio!=0), "ratio3", "amount")
+```
+```{r}
+#High threshold vs low threshold
+lin(filter(AER_centered, size !=2, size !=0), "size100", "gave")
+lin(filter(AER_centered, size !=2, size !=0), "size100", "amount")
+
+#Medium threshold vs low threshold
+lin(filter(AER_centered, size !=0, size !=3), "size50", "gave")
+lin(filter(AER_centered, size !=0, size !=3), "size50", "amount")
+
+#High threshold vs medium threshold
+lin(filter(AER_centered, size !=0, size !=1), "size100", "gave")
+lin(filter(AER_centered, size !=0, size !=1), "size100", "amount")
+```
+
+
+```{r}
+#High ask vs low ask
+lin(filter(AER_centered, ask !=2, ask !=0), "askd3", "gave")
+lin(filter(AER_centered, ask !=2, ask !=0), "askd3", "amount")
+
+#High ask vs medium ask
+lin(filter(AER_centered, ask !=1, ask !=0), "askd3", "gave")
+lin(filter(AER_centered, ask !=1, ask !=0), "askd3", "amount")
+
+#Medium ask vs low ask
+lin(filter(AER_centered, ask !=0, ask !=3), "askd2", "gave")
+lin(filter(AER_centered, ask !=0, ask !=3), "askd2", "amount")
+```
+
+Below: attempts to use a generalized Lin's estimator employing various ML tools
+
+
+1. Using a logistic regression method to predict `gave`:
+```{r}
+set.seed(2)
+AER_centered_t <- filter(AER_centered, treatment==1)
+AER_centered_c <- filter(AER_centered, treatment==0)
+t_train <- sample(1:nrow(AER_centered_t), 0.8*nrow(AER_centered_t))
+c_train <- sample(1:nrow(AER_centered_c), 0.8*nrow(AER_centered_c))
+```
+
+```{r}
+library(MASS)
+
+divide_by_sd <- function(x) {
+  return(x/sd(x))
+}
+AER_cen_std <- AER_centered
+AER_cen_std[covs] <- sapply(AER_centered[covs], divide_by_sd)
+AER_cen_std_t <- filter(AER_cen_std, treatment==1)
+AER_cen_std_c <- filter(AER_cen_std, treatment==0)
+```
+
+Fitting $\hat{\mu}_1$ model:
+```{r}
+glm.fit1=glm(gave~treatment+freq+years+mrm2+dormant+female+couple+nonlit+
+              cases+red0+pwhite+page18_39+ave_hh_sz+
+              powner+psch_atlstba+pop_propurban,
+            data=AER_cen_std_t, subset=t_train, family=binomial)
+glm_prob1 <- predict(glm.fit1, AER_cen_std_t[-t_train,], type="response")
+glm_pred1 <- rep(0, 6204)
+
+#Tuning probability threshold to maximize specificity and maintain accuracy > 90%
+glm_pred1[glm_prob1 > 0.04]=1
+
+#Testing model performance
+confusionMatrix(as.factor(glm_pred1), as.factor(AER_cen_std_t[-t_train,]$gave))
+
+#Full set predictions
+glm_probs1 <- predict(glm.fit1, AER_cen_std_t, type="response")
+glm_preds1 <- rep(0, 31018)
+glm_preds1[glm_probs1 > 0.04]=1
+```
+
+Fitting $\hat{\mu}_0$ model:
+```{r}
+glm.fit0=glm(gave~treatment+freq+years+mrm2+dormant+female+couple+nonlit+
+              cases+red0+pwhite+page18_39+ave_hh_sz+
+              powner+psch_atlstba+pop_propurban,
+            data=AER_cen_std_c, subset=c_train, family=binomial)
+glm_prob0 <- predict(glm.fit0, AER_cen_std_c[-c_train,], type="response")
+glm_pred0 <- rep(0, 3099)
+
+#Tuning probability threshold to maximize specificity and maintain accuracy > 90%
+glm_pred0[glm_prob0 > 0.031]=1
+
+#Testing model performance
+confusionMatrix(as.factor(glm_pred0), as.factor(AER_cen_std_c[-c_train,]$gave))
+
+#Full set predictions
+glm_probs0 <- predict(glm.fit0, AER_cen_std_c, type="response")
+glm_preds0 <- rep(0, 15495)
+glm_preds0[glm_probs0 > 0.031]=1
+```
+
+Calibrating predictions
+```{r}
+glm_preds0_cal <- glm_preds0+(1/nrow(AER_cen_std_c))*
+                    sum(AER_cen_std_c$gave-glm_preds0)
+glm_preds1_cal <- glm_preds1+(1/nrow(AER_cen_std_t))*
+                    sum(AER_cen_std_t$gave-glm_preds1)
+
+#Out-of-sample calibrated predictions
+glm_probs0_oos <- predict(glm.fit0, AER_cen_std_t, type="response")
+glm_preds0_oos <- rep(0, 31018)
+glm_preds0_oos[glm_probs0_oos > 0.031]=1
+
+glm_probs1_oos <- predict(glm.fit1, AER_cen_std_c, type="response")
+glm_preds1_oos <- rep(0, 15495)
+glm_preds1_oos[glm_probs1_oos > 0.04]=1
+
+glm_preds0_oos_cal <- glm_preds0_oos+(1/nrow(AER_cen_std_c))*
+                    sum(AER_cen_std_c$gave-glm_preds0)
+glm_preds1_oos_cal <- glm_preds1_oos+(1/nrow(AER_cen_std_t))*
+                    sum(AER_cen_std_t$gave-glm_preds1)
+```
+
+Resulting estimator
+```{r}
+(1/nrow(AER_centered))*(sum(AER_cen_std_t$gave-glm_preds0_oos)-
+                          sum(AER_centered_c$amount-glm_preds1_oos))
+```
+
+2. Using xgboost to predict `gave`:
+```{r}
+library(xgboost)
+vars <- c(covs, "treatment")
+xg.fit <- xgboost(data=as.matrix(AER_centered_t[t_train,][vars]),
+                  label=AER_centered_t[t_train,]$gave,
+                  max.depth=4, nthread=2, nrounds=4,
+                  objective="binary:logistic")
+xg.pred <- predict(xg.fit, as.matrix(AER_centered_t[-t_train,][vars]))
+xg.prediction <- as.factor(as.numeric(xg.pred > 0.1671))
+confusionMatrix(xg.prediction, as.factor(AER_centered_t[-t_train,]$gave))
+
+xg.fit2 <- xgboost(data=as.matrix(AER_centered_t[t_train,][vars]),
+                  label=AER_centered_t[t_train,]$amount,
+                  max.depth=4, nthread=2, nrounds=2)
+xg.pred2 <- predict(xg.fit2, as.matrix(AER_centered_t[-t_train,][vars]))
+plot(xg.pred2, AER_centered_t[-t_train,]$amount)
+```
+
+3. Using random forest to predict `gave`:
+```{r}
+set.seed(1)
+library(randomForest)
+rf <- randomForest(
+             x=AER_centered_t[t_train,][covs],
+             y=AER_centered_t[t_train,]$amount,
+             xtest=AER_centered_t[-t_train,][covs],
+             ytest=AER_centered_t[-t_train,]$amount, ntree=1000, mtry=19)
+plot(rf$test$predicted, as.factor(AER_centered_t[-t_train,]$amount))
+```
+
+Using lasso to predict `gave`:
+```{r}
+library(glmnet)
+
+#Mu_1
+lasso_cv_1 <- cv.glmnet(model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_t[x_train,]),
+                      AER_centered_t[x_train,]$amount, alpha=1)
+
+lasso_preds_1 <- predict(lasso_cv, newx=model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_t[-x_train,]), s="lambda.min")
+
+mean((lasso_preds_1-AER_centered_t[-x_train,]$amount)^2)
+
+#Mu_0
+AER_centered_c <- filter(AER_centered, treatment==0)
+x_train_0 <- sample(1:nrow(AER_centered_c), 0.8*nrow(AER_centered_c))
+
+lasso_cv_0 <- cv.glmnet(model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_c[x_train_0,]),
+                      AER_centered_c[x_train_0,]$amount, alpha=0.5)
+
+lasso_preds_0 <- predict(lasso_cv, newx=model.matrix(amount ~ hpa + freq +
+            years + mrm2 + dormant + female + couple + nonlit +
+            cases + red0 + redcty + pwhite + pblack + page18_39 + 
+            ave_hh_sz + median_hhincome + powner + psch_atlstba +
+            pop_propurban, data=AER_centered_c[-x_train_0,]), s="lambda.min")
+
+mean((lasso_preds_0-AER_centered_c[-x_train_0,]$amount)^2)
+
+mean_error_0 <-  mean(AER_centered_c[-x_train_0,]$amount-lasso_preds_0)
+mean_error_1 <-  mean(AER_centered_t[-x_train,]$amount-lasso_preds_1)
+```
