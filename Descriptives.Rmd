@@ -38,7 +38,7 @@ ggplot(data=df, aes(amount, fill=treatment_txt, color=treatment_txt)) +
   geom_density(position="stack", alpha=1) + 
   labs(x="Amount given (dollars)", 
        y="Density", 
-       title="Amount by treament vs. control") + 
+       title="Amount by treatment vs. control") + 
   scale_fill_discrete("") + 
   scale_color_discrete("")
 
