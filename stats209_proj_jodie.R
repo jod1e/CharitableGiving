@@ -306,3 +306,62 @@ frt_diff(df %>% filter(ask==1 | ask==3), amount, askd3, nreps=5000)
 frt_diff(df %>% filter(ask==1 | ask==2), amount, askd2, nreps=5000)
 # High vs. Med
 frt_diff(df %>% filter(ask==3 | ask==2), amount, askd3, nreps=5000)
+
+# process results into latex ----------------
+library(readr)
+library(kableExtra)
+treatment_diff <- read_csv("treatment_diff.csv", 
+                           col_types = cols(X7 = col_skip(), X8 = col_skip(), 
+                                            X9 = col_skip(), X10 = col_skip(), 
+                                            X11 = col_skip()))
+
+kable(treatment_diff, "latex", booktabs = TRUE, digits=3, caption="Comparing treatment types: gave as outcome", label="trt_trt_gave",
+      col.names=c("","tau", "SE", "p-value", "$R^2$", "p-value")) %>%
+  kable_styling(latex_options = "striped", position="center", full_width="F") %>%
+  add_header_above(c(" " = 1, "Lin's estimator" = 4, "FRT" = 1))
+# footnote("*** Significant at, or below, 1 percent. ** Significant at, or below, 5 percent. * Significant at, or below, 10 percent.") %>%
+
+treatment_diff2 <- read_csv("treatment_diff2.csv")
+kable(treatment_diff, "latex", booktabs = TRUE, digits=3, caption="Comparing treatment types: amount as outcome", label="trt_trt_amt",
+      col.names=c("","tau", "SE", "p-value", "$R^2$", "p-value")) %>%
+  kable_styling(latex_options = "striped", position="center", full_width="F") %>%
+  add_header_above(c(" " = 1, "Lin's estimator" = 4, "FRT" = 1))
+
+results1 <- read_csv("results1.csv", col_types = cols(X9 = col_skip(), 
+                                                      +     X10 = col_skip(), X11 = col_skip()))
+
+kable(results1, "latex", booktabs = TRUE, digits=3, caption="Treatment effects: gave as outcome", label="results1",
+      col.names=c("","Treatment","1:1","2:1","3:1","$25,000","$50,000","$100,000")) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position="center") %>%
+  add_header_above(c(" " = 2, "Match ratio" = 3, "Threshold" = 3)) %>%
+  footnote("*** Significant at, or below, 1 percent. ** Significant at, or below, 5 percent. * Significant at, or below, 10 percent.")
+
+results2 <- read_csv("results2.csv")
+kable(results2, "latex", booktabs = TRUE, digits=3, caption="Treatment effects: gave as outcome (cont.)", label="results2",
+      col.names=c("", "Low","Med","High","Blue State","Red State","Donated in 2005","Didn't donate in 2005")) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position="center") %>%
+  add_header_above(c(" " = 1, "Example amount" = 3, "Covariates" = 4))
+
+results3 <- read_csv("results3.csv")
+kable(results3, "latex", booktabs = TRUE, digits=3, caption="Treatment effects: amount as outcome", label="results3",
+      col.names=c("","Treatment","1:1","2:1","3:1","$25,000","$50,000","$100,000")) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position="center") %>%
+  add_header_above(c(" " = 2, "Match ratio" = 3, "Threshold" = 3))
+
+results4 <- read_csv("results4.csv")
+kable(results4, "latex", booktabs = TRUE, digits=3, caption="Treatment effects: amount as outcome (cont.)", label="results4",
+      col.names=c("", "Low","Med","High","Blue State","Red State","Donated in 2005","Didn't donate in 2005")) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position="center") %>%
+  add_header_above(c(" " = 1, "Example amount" = 3, "Covariates" = 4)) %>%
+  footnote("*** Significant at, or below, 1 percent. ** Significant at, or below, 5 percent. * Significant at, or below, 10 percent.")
+
+ml1 <- read_csv("ml1.csv")
+ml1 <- rbind(ml1, c("x", "x", "x"))
+kable(ml1, "latex", booktabs = TRUE, digits=3, caption="Lin's estimator classification: `gave` on `treatment`", label="ml1",
+      col.names=c("", "Estimated ATE", "SE")) %>%
+  kable_styling(latex_options = c("striped"), position="center")
+
+ml2 <- read_csv("ml2.csv")
+kable(ml2, "latex", booktabs = TRUE, digits=3, caption="Lin's estimator regression: `amount` on `treatment`", label="ml2",
+      col.names=c("", "Estimated ATE", "SE")) %>%
+  kable_styling(latex_options = c("striped"), position="center")
